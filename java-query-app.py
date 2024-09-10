@@ -3,12 +3,6 @@ import pandas as pd
 
 import query_transformer as qt
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-chain = qt.get_query_chain()
-
 def handle_query(user_query):
  
     result = qt.invoke_with_query(user_query, chain)
@@ -30,6 +24,15 @@ def display_results(cypher_query, cypher_result, final_answer):
 
     st.subheader("Final Answer")
     st.write(final_answer)
+
+if 'keys_initialized' not in st.session_state:
+    st.session_state.keys_initialized = False
+
+if not st.session_state.keys_initialized:
+    qt.initialize_keys()
+    st.session_state.keys_initialized = True
+    
+chain = qt.get_query_chain()
 
 # Streamlit UI
 st.title("Inspect your Java Project")

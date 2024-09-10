@@ -34,6 +34,19 @@ RETURN c.name
 The question is:
 {question}"""
 
+def initialize_keys():
+
+    print("initialize_keys")
+
+    global groq_api_key, NEO4J_URL, NEO4J_USER, NEO4J_PASSWORD  # Declare the use of global variables
+
+    # Initialize the global variables
+    load_dotenv()
+    groq_api_key = os.getenv('GROQ_API_KEY') or st.secrets.get("GROQ_API_KEY")
+    NEO4J_URL = os.getenv('NEO4J_URL') or st.secrets.get("NEO4J_URL")
+    NEO4J_USER = os.getenv('NEO4J_USER') or st.secrets.get("NEO4J_USER")
+    NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD') or st.secrets.get("NEO4J_PASSWORD")
+
 def get_cypher_llm():
     return ChatGroq(temperature=0,model_name=LLAMA3)
 
@@ -50,11 +63,7 @@ def get_custom_instructions():
         return file.read()
 
 def get_graph():
-    load_dotenv()
-    url = os.getenv('NEO4J_URL')
-    user = os.getenv('NEO4J_USER')
-    pw = os.getenv('NEO4J_PASSWORD')
-    graph = Neo4jGraph(url=url, username=user, password=pw, refresh_schema=True)
+    graph = Neo4jGraph(url=NEO4J_URL, username=NEO4J_USER, password=NEO4J_PASSWORD, refresh_schema=True)
     print(graph.schema)
     return graph
 
