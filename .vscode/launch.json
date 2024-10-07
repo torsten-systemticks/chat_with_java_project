@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Streamlit",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/java-query-app.py",
+            "args": [
+                "run"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        }
+    ]
+}
