@@ -7,6 +7,24 @@ if 'query_processor' not in st.session_state:
     st.session_state['query_processor'] = QueryProcessor()
     st.session_state['query_processor'].initialize()
 
+st.sidebar.title("Configuration")
+cypher_llm_choice = st.sidebar.selectbox(
+    "Choose the Query Generation Model:",
+    ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it",
+     "llama3-groq-70b-8192-tool-use-preview"],  # Dropdown options for LLMs
+    index=0  # Default to the first LLM
+)
+
+qa_llm_choice = st.sidebar.selectbox(
+    "Choose the QA Model:",
+    ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it",
+     "llama3-groq-70b-8192-tool-use-preview"],  # Dropdown options for LLMs
+    index=0  # Default to the first LLM
+)
+
+st.session_state['query_processor'].set_cypher_llm_choice(cypher_llm_choice)
+st.session_state['query_processor'].set_qa_llm_choice(qa_llm_choice)
+
 # Streamlit UI
 st.title("Inspect your Java Project")
 

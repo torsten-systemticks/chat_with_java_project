@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import os
 import pandas as pd
 from langchain_core.output_parsers import StrOutputParser
+from examples import QUERY_EXAMPLES
 
 # Constants for LLM models and instruction file
 LLAMA3 = "llama3-70b-8192"
@@ -23,12 +24,7 @@ For searching part of strings prefer CONTAINS or STARTS WITH function over regul
 You must always use the right direction of a relationship.
 
 Examples: Here are a few examples of generated Cypher statements for particular questions:
-# Show me all classes that declare less than 3 public methods
-MATCH (c:Class)-[:DECLARES_METHOD]->(m:Method)
-WHERE m.accessModifier = "public"
-WITH c, COUNT(m) AS methodCount
-WHERE methodCount < 3
-RETURN c.name
+{examples}
 
 The question is:
 {question}"""
@@ -41,6 +37,8 @@ class QueryProcessor:
         self.neo4j_password = None
         self.query_chain = None
         self.refinement_chain = None
+        self.selected_cypher_llm = LLAMA3
+        self.selected_qa_llm = LLAMA3
     
     def initialize(self):
         # Load keys and initialize all required objects
@@ -57,15 +55,23 @@ class QueryProcessor:
         self.neo4j_password = os.getenv('NEO4J_PASSWORD') or st.secrets.get("NEO4J_PASSWORD")
         print("Keys initialized")
 
+    def set_cypher_llm_choice(self, llm_choice):
+        self.selected_cypher_llm = llm_choice
+        self.query_chain = self._get_query_chain()
+
+    def set_qa_llm_choice(self, llm_choice):
+        self.selected_qa_llm = llm_choice
+        self.query_chain = self._get_query_chain()
+
     def _get_cypher_llm(self):
-        return ChatGroq(temperature=0, model_name=LLAMA3)
+        return ChatGroq(temperature=0, model_name=self.selected_cypher_llm)
 
     def _get_qa_llm(self):
-        return ChatGroq(temperature=0, model_name=MIXTRAL)
+        return ChatGroq(temperature=0, model_name=self.selected_qa_llm)
 
     def _get_prompt(self):
         return PromptTemplate(
-            input_variables=["schema", "question"], template=CYPHER_GENERATION_TEMPLATE
+            input_variables=["schema", "question", "examples"], template=CYPHER_GENERATION_TEMPLATE
         )
 
     def _get_graph(self):
@@ -115,13 +121,13 @@ class QueryProcessor:
         return ChatGroq(temperature=0, model_name=LLAMA3)
 
     def _get_refinement_chain(self):
-        prompt = PromptTemplate.from_template(template=REFINEMENT_TEMPLATE)
+        prompt = PromptTemplate.from_template(template=self.REFINEMENT_TEMPLATE)
         chain = prompt | self._get_refinement_llm() | StrOutputParser()
         return chain
 
     def handle_query(self, query: str):
         # Handle a single query and return results
-        result = self.query_chain.invoke({'query': query})
+        result = self.query_chain.invoke({'query': query, 'examples' : QUERY_EXAMPLES})
         steps = result['intermediate_steps']
 
         # Extract Cypher query, result, and final answer
