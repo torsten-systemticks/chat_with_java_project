@@ -7,6 +7,9 @@ import os
 import pandas as pd
 from langchain_core.output_parsers import StrOutputParser
 from examples import QUERY_EXAMPLES
+import streamlit as st 
+from langchain_ollama import ChatOllama
+
 
 # Constants for LLM models and instruction file
 LLAMA3 = "llama3-70b-8192"
@@ -38,6 +41,7 @@ class QueryProcessor:
         self.query_chain = None
         self.refinement_chain = None
         self.selected_cypher_llm = LLAMA3
+        self.selected_cypher_model_provider = "Groq" 
         self.selected_qa_llm = LLAMA3
     
     def initialize(self):
@@ -55,8 +59,9 @@ class QueryProcessor:
         self.neo4j_password = os.getenv('NEO4J_PASSWORD') or st.secrets.get("NEO4J_PASSWORD")
         print("Keys initialized")
 
-    def set_cypher_llm_choice(self, llm_choice):
-        self.selected_cypher_llm = llm_choice
+    def set_cypher_llm_choice(self, provider, llm):
+        self.selected_cypher_llm = llm
+        self.selected_cypher_model_provider = provider
         self.query_chain = self._get_query_chain()
 
     def set_qa_llm_choice(self, llm_choice):
@@ -64,7 +69,10 @@ class QueryProcessor:
         self.query_chain = self._get_query_chain()
 
     def _get_cypher_llm(self):
-        return ChatGroq(temperature=0, model_name=self.selected_cypher_llm)
+        if(self.selected_cypher_model_provider == "Groq"):
+            return ChatGroq(temperature=0, model_name=self.selected_cypher_llm)
+        if(self.selected_cypher_model_provider == "Ollama"):
+            return ChatOllama(temperature=0, model=self.selected_cypher_llm)
 
     def _get_qa_llm(self):
         return ChatGroq(temperature=0, model_name=self.selected_qa_llm)
@@ -89,7 +97,7 @@ class QueryProcessor:
             verbose=True,
             cypher_prompt=self._get_prompt(),
             return_intermediate_steps=True,
-            validate_cypher=True
+            validate_cypher=True,
         )
 
     REFINEMENT_TEMPLATE="""

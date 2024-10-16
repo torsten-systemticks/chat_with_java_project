@@ -8,12 +8,30 @@ if 'query_processor' not in st.session_state:
     st.session_state['query_processor'].initialize()
 
 st.sidebar.title("Configuration")
-cypher_llm_choice = st.sidebar.selectbox(
-    "Choose the Query Generation Model:",
-    ["llama3-70b-8192", "mixtral-8x7b-32768", "gemma2-9b-it",
-     "llama3-groq-70b-8192-tool-use-preview"],  # Dropdown options for LLMs
-    index=0  # Default to the first LLM
-)
+#cypher_llm_choice = st.sidebar.selectbox(
+#    "Choose the Query Generation Model:",
+#    [
+#     ("Groq", "llama3-70b-8192"),
+#     ("Groq",  "mixtral-8x7b-32768"), 
+#     ("Groq", "gemma2-9b-it"),
+#     ("Groq", "llama3-groq-70b-8192-tool-use-preview"),
+#     ("Ollama", "codegemma:instruct")
+#     ], 
+#    index=0  # Default to the first LLM
+#)
+
+cypher_ll_options = [
+     ("Groq", "llama3-70b-8192"),
+     ("Groq",  "mixtral-8x7b-32768"), 
+     ("Groq", "gemma2-9b-it"),
+     ("Groq", "llama3-groq-70b-8192-tool-use-preview"),
+     ("Ollama", "codegemma:instruct")    
+]
+
+formatted_options = [f'{provider}: {model}' for provider, model in cypher_ll_options]
+
+cypher_llm_choice = st.sidebar.selectbox('Select a Language Model:', formatted_options, index=0)
+
 
 qa_llm_choice = st.sidebar.selectbox(
     "Choose the QA Model:",
@@ -22,7 +40,9 @@ qa_llm_choice = st.sidebar.selectbox(
     index=0  # Default to the first LLM
 )
 
-st.session_state['query_processor'].set_cypher_llm_choice(cypher_llm_choice)
+provider, llm = cypher_llm_choice.split(': ')
+
+st.session_state['query_processor'].set_cypher_llm_choice(provider, llm)
 st.session_state['query_processor'].set_qa_llm_choice(qa_llm_choice)
 
 # Streamlit UI
