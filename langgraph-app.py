@@ -1,10 +1,10 @@
 import streamlit as st 
 import pandas as pd
-from query_transformer import QueryProcessor
+from workflow import Workflow
 
 # Initialize Query Processor once per session
 if 'query_processor' not in st.session_state:
-    st.session_state['query_processor'] = QueryProcessor()
+    st.session_state['query_processor'] = Workflow()
     st.session_state['query_processor'].initialize()
 
 st.sidebar.title("Configuration")
@@ -31,8 +31,8 @@ qa_llm_choice = st.sidebar.selectbox(
 
 provider, llm = cypher_llm_choice.split(': ')
 
-st.session_state['query_processor'].set_cypher_llm_choice(provider, llm)
-st.session_state['query_processor'].set_qa_llm_choice(qa_llm_choice)
+#st.session_state['query_processor'].set_cypher_llm_choice(provider, llm)
+#st.session_state['query_processor'].set_qa_llm_choice(qa_llm_choice)
 
 # Streamlit UI
 st.title("Inspect your Java Project")
@@ -42,14 +42,21 @@ user_query = st.text_area("Enter your query in natural language:", height=100)
 # Process and display results when the submit button is clicked
 if st.button("Submit"):
     if user_query:
-        cypher_query, cypher_result, final_answer = st.session_state['query_processor'].handle_query(user_query)
-        st.subheader("Generated Cypher Query")
-        st.code(cypher_query, language='cypher')
+        result = st.session_state['query_processor'].handle_query(user_query)
 
-        st.subheader("Query Result")
-        st.table(cypher_result)
+        if 'refined_question' in result:
+            st.subheader('Automated refined question')
+            st.write(result['refined_question'])
+
+        if 'cypher_query' in result:
+            st.subheader("Generated Cypher Query")
+            st.code(result['cypher_query'], language='cypher')
+
+        if 'cypher_result' in result:
+            st.subheader("Query Result")
+            st.table(result['cypher_result'])
 
         st.subheader("Final Answer")
-        st.write(final_answer)
+        st.write(result['final_answer'])
     else:
         st.error("Please enter a query.")

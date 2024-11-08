@@ -9,6 +9,8 @@ from langchain_core.output_parsers import StrOutputParser
 from examples import QUERY_EXAMPLES
 import streamlit as st 
 from langchain_ollama import ChatOllama
+from workflow import router_prompt
+from langchain_core.output_parsers import JsonOutputParser
 
 
 # Constants for LLM models and instruction file
@@ -39,6 +41,7 @@ class QueryProcessor:
         self.neo4j_user = None
         self.neo4j_password = None
         self.query_chain = None
+        self.router_chain = None
         self.refinement_chain = None
         self.selected_cypher_llm = LLAMA3
         self.selected_cypher_model_provider = "Groq" 
@@ -49,6 +52,7 @@ class QueryProcessor:
         self._initialize_keys()
         self.query_chain = self._get_query_chain()
         self.refinement_chain = self._get_refinement_chain()
+        self.router_chain = self._get_router_chain()
 
     def _initialize_keys(self):
         # Initialize keys only once
@@ -57,7 +61,7 @@ class QueryProcessor:
         self.neo4j_url = os.getenv('NEO4J_URL') or st.secrets.get("NEO4J_URL")
         self.neo4j_user = os.getenv('NEO4J_USER') or st.secrets.get("NEO4J_USER")
         self.neo4j_password = os.getenv('NEO4J_PASSWORD') or st.secrets.get("NEO4J_PASSWORD")
-        print("Keys initialized")
+        #print("Keys initialized")
 
     def set_cypher_llm_choice(self, provider, llm):
         self.selected_cypher_llm = llm
@@ -100,6 +104,10 @@ class QueryProcessor:
             validate_cypher=True,
         )
 
+    def _get_router_chain(self):
+        llm = ChatGroq(temperature=0, model_name=self.selected_qa_llm)
+        return router_prompt | llm | JsonOutputParser()
+
     REFINEMENT_TEMPLATE="""
     You are an expert in prompt refinement and java software development.
     You task is to improve the origin user question/prompt by providing an alternative prompt, that is more concise and expressive.
@@ -135,6 +143,10 @@ class QueryProcessor:
 
     def handle_query(self, query: str):
         # Handle a single query and return results
+        router_result = self.router_chain.invoke({'question': query})
+        print (router_result)
+
+
         result = self.query_chain.invoke({'query': query, 'examples' : QUERY_EXAMPLES})
         steps = result['intermediate_steps']
 
